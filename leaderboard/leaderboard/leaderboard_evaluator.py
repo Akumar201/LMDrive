@@ -112,12 +112,15 @@ class LeaderboardEvaluator(object):
 
     def _signal_handler(self, signum, frame):
         """
-        Terminate scenario ticking when receiving a signal interrupt
+        Terminate scenario ticking and exit cleanly on Ctrl+C (free GPU, kill CARLA via script).
         """
         if self._agent_watchdog and not self._agent_watchdog.get_status():
             raise RuntimeError("Timeout: Agent took too long to setup")
-        elif self.manager:
+        if self.manager:
             self.manager.signal_handler(signum, frame)
+        print("\n\033[93mInterrupted. Cleaning up and exiting...\033[0m")
+        self._cleanup()
+        sys.exit(130)
 
     def __del__(self):
         """
@@ -169,6 +172,15 @@ class LeaderboardEvaluator(object):
 
         if hasattr(self, 'statistics_manager') and self.statistics_manager:
             self.statistics_manager.scenario = None
+
+        # Free GPU memory (PyTorch) so it is released on exit
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                gc.collect()
+        except Exception:
+            pass
 
     def _prepare_ego_vehicles(self, ego_vehicles, wait_for_ego_vehicles=False):
         """

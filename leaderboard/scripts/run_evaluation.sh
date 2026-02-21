@@ -1,7 +1,26 @@
 #!/bin/bash
 export PT=$(($RANDOM % 1000 + 16000))
+CARLA_PID=""
+
+# Graceful exit: kill CARLA server on script exit (normal or Ctrl+C). Ensures GPU/process cleanup.
+kill_carla() {
+  if [ -n "$CARLA_PID" ]; then
+    echo "" && echo "Shutting down: killing CARLA server (PID ${CARLA_PID})..."
+    kill "$CARLA_PID" 2>/dev/null
+    wait "$CARLA_PID" 2>/dev/null
+  fi
+}
+on_int_term() {
+  echo "" && echo "Interrupted (Ctrl+C). Cleaning up..."
+  kill_carla
+  exit 130
+}
+trap kill_carla EXIT
+trap on_int_term INT TERM
+
 # Start CARLA without rendering (off-screen, no window). -opengl required for headless on Linux.
 DISPLAY= bash carla/CarlaUE4.sh --world-port=$PT -opengl &
+CARLA_PID=$!
 
 sleep 4
 
@@ -32,16 +51,16 @@ export RESUME=False
 
 echo ${LEADERBOARD_ROOT}/leaderboard/leaderboard_evaluator.py
 python3 -u  ${LEADERBOARD_ROOT}/leaderboard/leaderboard_evaluator.py \
---scenarios=${SCENARIOS}  \
---routes=${ROUTES} \
---repetitions=${REPETITIONS} \
---track=${CHALLENGE_TRACK_CODENAME} \
---checkpoint=${CHECKPOINT_ENDPOINT} \
---agent=${TEAM_AGENT} \
---agent-config=${TEAM_CONFIG} \
---debug=${DEBUG_CHALLENGE} \
---record=${RECORD_PATH} \
---resume=${RESUME} \
---port=${PORT} \
---trafficManagerPort=${TM_PORT}
+  --scenarios=${SCENARIOS}  \
+  --routes=${ROUTES} \
+  --repetitions=${REPETITIONS} \
+  --track=${CHALLENGE_TRACK_CODENAME} \
+  --checkpoint=${CHECKPOINT_ENDPOINT} \
+  --agent=${TEAM_AGENT} \
+  --agent-config=${TEAM_CONFIG} \
+  --debug=${DEBUG_CHALLENGE} \
+  --record=${RECORD_PATH} \
+  --resume=${RESUME} \
+  --port=${PORT} \
+  --trafficManagerPort=${TM_PORT}
 
