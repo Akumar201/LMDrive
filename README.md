@@ -90,6 +90,8 @@ chmod +x setup_carla.sh
 pip install carla
 ```
 
+For 4 bit or 8 bit quantisation use parameter in lmdriver_config.py
+
 ```Shell
 export CARLA_ROOT=/path/to/carla/root
 export TEAM_AGENT=leaderboard/team_code/lmdrive_agent.py

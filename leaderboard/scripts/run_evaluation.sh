@@ -19,7 +19,7 @@ trap kill_carla EXIT
 trap on_int_term INT TERM
 
 # Start CARLA without rendering (off-screen, no window). -opengl required for headless on Linux.
-DISPLAY= bash carla/CarlaUE4.sh --world-port=$PT -opengl &
+DISPLAY= bash carla/CarlaUE4.sh --world-port=$PT -opengl -quality-level=Low &
 CARLA_PID=$!
 
 sleep 4

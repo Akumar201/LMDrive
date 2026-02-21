@@ -58,7 +58,7 @@ class Blip2VicunaDrive(Blip2Base):
         use_extra_prompt=False,
         use_notice_prompt=False,
         freeze_decoder_of_visual_encoder=True,
-        load_in_4bit=False,
+        quantization=None,
         has_qformer=True,
         has_gru_decoder=False,
         has_lora=False,
@@ -79,7 +79,7 @@ class Blip2VicunaDrive(Blip2Base):
         self.has_qformer = has_qformer
         self.has_gru_decoder = has_gru_decoder
         self.has_lora = has_lora
-        self.load_in_4bit = load_in_4bit
+        self.quantization = quantization
         self.split_section_num_for_visual_encoder = split_section_num_for_visual_encoder
 
 
@@ -102,7 +102,7 @@ class Blip2VicunaDrive(Blip2Base):
 
 
         bnb_kwargs = {}
-        if self.load_in_4bit:
+        if self.quantization == "4bit":
             bnb_kwargs = dict(
                 quantization_config=BitsAndBytesConfig(
                     load_in_4bit=True,
@@ -110,6 +110,11 @@ class Blip2VicunaDrive(Blip2Base):
                     bnb_4bit_quant_type="nf4",
                     bnb_4bit_use_double_quant=True,
                 ),
+                device_map={"": 0},
+            )
+        elif self.quantization == "8bit":
+            bnb_kwargs = dict(
+                quantization_config=BitsAndBytesConfig(load_in_8bit=True),
                 device_map={"": 0},
             )
 

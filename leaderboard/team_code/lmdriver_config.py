@@ -28,7 +28,7 @@ class GlobalConfig:
 
     agent_use_notice = False
     sample_rate = 2
-    load_in_4bit = True
+    quantization = "8bit"  # None, "4bit", or "8bit"
 
 
     def __init__(self, **kwargs):
