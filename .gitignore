@@ -1,0 +1,84 @@
+# Install / build artifacts
+*.egg-info/
+*.egg
+build/
+dist/
+*.so
+.Python
+develop-eggs/
+eggs/
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.installed.cfg
+*.whl
+
+# LAVIS & vision_encoder install artifacts
+LAVIS/salesforce_lavis.egg-info/
+vision_encoder/timm.egg-info/
+
+# CARLA simulator (downloaded/set up via setup_carla.sh)
+carla/
+
+# Model checkpoints and weights (downloaded or trained)
+*.pth
+*.pt
+*.ckpt
+*.bin
+*.safetensors
+output/
+lavis/output/
+results/
+checkpoints/
+weights/
+pretrained/
+
+# Dataset and collected data (user-specific, often large)
+dataset/
+data/
+*.npy
+*.npz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env.local
+.env.*.local
+
+# IDE and OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs and experiment tracking
+*.log
+logs/
+wandb/
+lightning_logs/
+
+# Hugging Face cache (optional; uncomment if you don't want to track cache location)
+# .cache/
+# huggingface/
