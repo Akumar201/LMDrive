@@ -22,6 +22,7 @@ vision_encoder/timm.egg-info/
 carla/
 
 # Model checkpoints and weights (downloaded or trained)
+models/
 *.pth
 *.pt
 *.ckpt
