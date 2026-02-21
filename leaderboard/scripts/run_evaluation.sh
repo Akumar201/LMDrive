@@ -1,6 +1,7 @@
 #!/bin/bash
 export PT=$(($RANDOM % 1000 + 16000))
-bash carla/CarlaUE4.sh --world-port=$PT &
+# Start CARLA without rendering (off-screen, no window). -opengl required for headless on Linux.
+DISPLAY= bash carla/CarlaUE4.sh --world-port=$PT -opengl &
 
 sleep 4
 
