@@ -26,7 +26,8 @@ export CHECKPOINT_ENDPOINT=results/sample_result.json # results file
 #export SCENARIOS=leaderboard/data/scenarios/no_scenarios.json #town05_all_scenarios.json
 export SCENARIOS=leaderboard/data/official/all_towns_traffic_scenarios_public.json
 export SAVE_PATH=data/eval # path for saving episodes while evaluating
-export RESUME=True
+# Set to False to run all routes from start; True to resume from checkpoint
+export RESUME=False
 
 echo ${LEADERBOARD_ROOT}/leaderboard/leaderboard_evaluator.py
 python3 -u  ${LEADERBOARD_ROOT}/leaderboard/leaderboard_evaluator.py \

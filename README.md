@@ -67,16 +67,20 @@ Clone the repo and build the environment
 ```Shell
 git clone https://github.com/opendilab/LMDrive.git
 cd LMDrive
+conda deactivate
+conda env remove -n lmdrive
 conda create -n lmdrive python=3.8
 conda activate lmdrive
+pip install torch torchvision
+pip install torch_scatter --no-build-isolation
 cd vision_encoder
 pip3 install -r requirements.txt
 python setup.py develop # if you have installed timm before, please uninstall it
 cd ../LAVIS
 pip3 install -r requirements.txt
 python setup.py develop # if you have installed LAVIS before, please uninstall it
-
-pip install flash-attn --no-build-isolation # optional
+cd ..
+pip install flash-attn --no-build-isolation # optional -> try avoiding 
 ```
 
 Download and setup CARLA 0.9.10.1
@@ -84,6 +88,17 @@ Download and setup CARLA 0.9.10.1
 chmod +x setup_carla.sh
 ./setup_carla.sh
 pip install carla
+```
+
+```Shell
+export CARLA_ROOT=/path/to/carla/root
+export TEAM_AGENT=leaderboard/team_code/lmdrive_agent.py
+export TEAM_CONFIG=leaderboard/team_code/lmdrive_config.py
+export CHECKPOINT_ENDPOINT=results/lmdrive_result.json
+export SCENARIOS=leaderboard/data/official/all_towns_traffic_scenarios_public.json
+export ROUTES=leaderboard/data/LangAuto/long.xml
+
+CUDA_VISIBLE_DEVICES=0 ./leaderboard/scripts/run_evaluation.sh
 ```
 
 > If you encounter some problems related to Carla, please refer to [Carla Issues](https://github.com/carla-simulator/carla/issues) and [InterFuser Issues](https://github.com/opendilab/InterFuser) first.

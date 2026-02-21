@@ -1,5 +1,14 @@
 dictor
+easydict
 requests
 opencv-python==4.2.0.32
 pygame
+py_trees==0.8.3
 tabulate
+# scenario_runner deps (evaluator imports srunner)
+Shapely>=1.8.0,<2.0
+networkx>=3.0
+psutil
+ephem
+xmlschema==1.0.18
+six

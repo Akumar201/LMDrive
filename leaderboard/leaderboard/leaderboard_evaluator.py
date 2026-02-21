@@ -134,30 +134,34 @@ class LeaderboardEvaluator(object):
         """
         Remove and destroy all actors
         """
-
+        manager = getattr(self, 'manager', None)
         # Simulation still running and in synchronous mode?
-        if self.manager and self.manager.get_running_status() \
-                and hasattr(self, 'world') and self.world:
+        world = getattr(self, 'world', None)
+        if manager and manager.get_running_status() and world:
             # Reset to asynchronous mode
-            settings = self.world.get_settings()
+            settings = world.get_settings()
             settings.synchronous_mode = False
             settings.fixed_delta_seconds = None
-            self.world.apply_settings(settings)
-            self.traffic_manager.set_synchronous_mode(False)
+            world.apply_settings(settings)
+            traffic_mgr = getattr(self, 'traffic_manager', None)
+            if traffic_mgr is not None:
+                traffic_mgr.set_synchronous_mode(False)
 
-        if self.manager:
-            self.manager.cleanup()
+        if manager:
+            manager.cleanup()
 
         CarlaDataProvider.cleanup()
 
-        for i, _ in enumerate(self.ego_vehicles):
-            if self.ego_vehicles[i]:
-                self.ego_vehicles[i].destroy()
-                self.ego_vehicles[i] = None
+        ego_vehicles = getattr(self, 'ego_vehicles', [])
+        for i, _ in enumerate(ego_vehicles):
+            if ego_vehicles[i]:
+                ego_vehicles[i].destroy()
+                ego_vehicles[i] = None
         self.ego_vehicles = []
 
-        if self._agent_watchdog._timer:
-            self._agent_watchdog.stop()
+        agent_watchdog = getattr(self, '_agent_watchdog', None)
+        if agent_watchdog and getattr(agent_watchdog, '_timer', None):
+            agent_watchdog.stop()
 
         if hasattr(self, 'agent_instance') and self.agent_instance:
             self.agent_instance.destroy()
@@ -410,6 +414,12 @@ class LeaderboardEvaluator(object):
             self.statistics_manager.clear_record(args.checkpoint)
             route_indexer.save_state(args.checkpoint)
 
+        remaining = len(route_indexer._configs_list) - route_indexer._index
+        print("\033[1m> Routes: {} total, {} remaining to run\033[0m".format(route_indexer.total, remaining))
+        if remaining <= 0:
+            print("\033[93mNo routes to run (resume checkpoint may show all done). "
+                  "Use RESUME=False or remove checkpoint {} to run from start.\033[0m".format(args.checkpoint))
+
         while route_indexer.peek():
             # setup
             config = route_indexer.next()
@@ -469,7 +479,16 @@ def main():
     parser.add_argument("--agent-config", type=str, help="Path to Agent's configuration file", default="")
 
     parser.add_argument("--track", type=str, default='SENSORS', help="Participation track: SENSORS, MAP")
-    parser.add_argument('--resume', type=bool, default=False, help='Resume execution from last checkpoint?')
+
+    def _str_to_bool(v):
+        if isinstance(v, bool):
+            return v
+        if str(v).lower() in ('yes', 'true', '1'):
+            return True
+        if str(v).lower() in ('no', 'false', '0'):
+            return False
+        raise argparse.ArgumentTypeError('Boolean value expected (true/false, yes/no, 1/0).')
+    parser.add_argument('--resume', type=_str_to_bool, default=False, help='Resume execution from last checkpoint?')
     parser.add_argument("--checkpoint", type=str,
                         default='./simulation_results.json',
                         help="Path to checkpoint used for saving statistics and resuming")
@@ -478,6 +497,7 @@ def main():
 
     statistics_manager = StatisticsManager()
 
+    leaderboard_evaluator = None
     try:
         leaderboard_evaluator = LeaderboardEvaluator(arguments, statistics_manager)
         leaderboard_evaluator.run(arguments)
@@ -485,7 +505,8 @@ def main():
     except Exception as e:
         traceback.print_exc()
     finally:
-        del leaderboard_evaluator
+        if leaderboard_evaluator is not None:
+            del leaderboard_evaluator
 
 
 if __name__ == '__main__':

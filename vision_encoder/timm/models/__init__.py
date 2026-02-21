@@ -45,7 +45,10 @@ from .xception_aligned import *
 from .xcit import *
 from .twins import *
 from .interfuser import *
-from .pointpillar import *
+try:
+    from .pointpillar import *
+except (ImportError, OSError):
+    pass  # torch_scatter may be missing or ABI-incompatible; not needed for memfuser/drive
 from .memfuser import *
 
 from .factory import create_model, split_model_name, safe_model_name

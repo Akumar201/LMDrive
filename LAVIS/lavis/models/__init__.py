@@ -40,7 +40,10 @@ from lavis.models.blip2_models.blip2_image_text_matching import Blip2ITM
 from lavis.models.blip2_models.blip2_t5_instruct import Blip2T5Instruct
 from lavis.models.blip2_models.blip2_vicuna_instruct import Blip2VicunaInstruct
 
-from lavis.models.blip_diffusion_models.blip_diffusion import BlipDiffusion
+try:
+    from lavis.models.blip_diffusion_models.blip_diffusion import BlipDiffusion
+except (ImportError, OSError, RuntimeError):
+    BlipDiffusion = None  # diffusers/huggingface_hub compat; not needed for vicuna_drive
 
 from lavis.models.pnp_vqa_models.pnp_vqa import PNPVQA
 from lavis.models.pnp_vqa_models.pnp_unifiedqav2_fid import PNPUnifiedQAv2FiD
@@ -49,7 +52,10 @@ from lavis.models.med import XBertLMHeadDecoder
 from lavis.models.vit import VisionTransformerEncoder
 from lavis.models.clip_models.model import CLIP
 
-from lavis.models.gpt_models.gpt_dialogue import GPTDialogue
+try:
+    from lavis.models.gpt_models.gpt_dialogue import GPTDialogue
+except (ImportError, OSError, RuntimeError):
+    GPTDialogue = None  # transformers/flash_attn compat; not needed for vicuna_drive
 from lavis.models.drive_models.drive import Blip2VicunaDrive
 
 from lavis.processors.base_processor import BaseProcessor
