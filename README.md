@@ -101,6 +101,14 @@ export ROUTES=leaderboard/data/LangAuto/long.xml
 CUDA_VISIBLE_DEVICES=0 ./leaderboard/scripts/run_evaluation.sh
 ```
 
+
+To print parameter count and estimated GPU memory 
+
+```Shell
+cd /home/akumar/LMDrive
+./leaderboard/scripts/print_model_size.sh
+```
+
 > If you encounter some problems related to Carla, please refer to [Carla Issues](https://github.com/carla-simulator/carla/issues) and [InterFuser Issues](https://github.com/opendilab/InterFuser) first.
 
 
