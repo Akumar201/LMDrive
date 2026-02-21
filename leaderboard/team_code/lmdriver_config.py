@@ -28,6 +28,7 @@ class GlobalConfig:
 
     agent_use_notice = False
     sample_rate = 2
+    load_in_4bit = True
 
 
     def __init__(self, **kwargs):

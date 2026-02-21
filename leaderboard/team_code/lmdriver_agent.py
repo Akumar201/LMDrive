@@ -200,18 +200,37 @@ class LMDriveAgent(autonomous_agent.AutonomousAgent):
         self.now_notice_frame_id = -1
         self.sample_rate = self.config.sample_rate * 2 # The frequency of CARLA simulation is 20Hz
 
+        load_in_4bit = getattr(self.config, 'load_in_4bit', False)
+
         print('build model...')
         model = model_cls(preception_model=self.config.preception_model,
                           preception_model_ckpt=self.config.preception_model_ckpt,
                           llm_model=self.config.llm_model,
                           max_txt_len=64,
                           use_notice_prompt=self.config.agent_use_notice,
+                          load_in_4bit=load_in_4bit,
                           )
         self.net = model
 
         print('load model...')
-        self.net.load_state_dict(torch.load(self.config.lmdrive_ckpt)["model"], strict=False)
-        self.net.cuda()
+        ckpt = torch.load(self.config.lmdrive_ckpt)["model"]
+        if load_in_4bit:
+            # Quantized LLM weights have different shapes; the base weights are
+            # already loaded by from_pretrained, and they were frozen during
+            # training, so skipping them is safe.
+            ckpt = {k: v for k, v in ckpt.items() if not k.startswith('llm_model.')}
+        self.net.load_state_dict(ckpt, strict=False)
+
+        if load_in_4bit:
+            # LLM is already on GPU via device_map; move everything else.
+            for param in self.net.parameters():
+                if param.data.device.type == 'cpu':
+                    param.data = param.data.cuda()
+            for buf in self.net.buffers():
+                if buf.device.type == 'cpu':
+                    buf.data = buf.data.cuda()
+        else:
+            self.net.cuda()
         self.net.eval()
         self.softmax = torch.nn.Softmax(dim=1)
         self.prev_lidar = None

@@ -10,6 +10,7 @@ from torch.cuda.amp import autocast as autocast
 import torch.nn as nn
 
 import transformers
+from transformers import BitsAndBytesConfig
 import peft
 from peft import LoraConfig, get_peft_model
 
@@ -57,6 +58,7 @@ class Blip2VicunaDrive(Blip2Base):
         use_extra_prompt=False,
         use_notice_prompt=False,
         freeze_decoder_of_visual_encoder=True,
+        load_in_4bit=False,
         has_qformer=True,
         has_gru_decoder=False,
         has_lora=False,
@@ -77,6 +79,7 @@ class Blip2VicunaDrive(Blip2Base):
         self.has_qformer = has_qformer
         self.has_gru_decoder = has_gru_decoder
         self.has_lora = has_lora
+        self.load_in_4bit = load_in_4bit
         self.split_section_num_for_visual_encoder = split_section_num_for_visual_encoder
 
 
@@ -98,12 +101,24 @@ class Blip2VicunaDrive(Blip2Base):
             logging.info("freeze vision encoder")
 
 
+        bnb_kwargs = {}
+        if self.load_in_4bit:
+            bnb_kwargs = dict(
+                quantization_config=BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_use_double_quant=True,
+                ),
+                device_map={"": 0},
+            )
+
         if 'opt' in llm_model:
             self.llm_tokenizer = AutoTokenizer.from_pretrained(llm_model, use_fast=False, truncation_side='left')
-            self.llm_model = OPTForCausalLM.from_pretrained(llm_model, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+            self.llm_model = OPTForCausalLM.from_pretrained(llm_model, torch_dtype=torch.float16, low_cpu_mem_usage=True, **bnb_kwargs)
         else:
             self.llm_tokenizer = LlamaTokenizer.from_pretrained(llm_model, use_fast=False, truncation_side="left")
-            self.llm_model = LlamaForCausalLM.from_pretrained(llm_model, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+            self.llm_model = LlamaForCausalLM.from_pretrained(llm_model, torch_dtype=torch.float16, low_cpu_mem_usage=True, **bnb_kwargs)
 
 
         self.llm_tokenizer.add_special_tokens({'pad_token': '[PAD]'})

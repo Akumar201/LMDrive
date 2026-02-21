@@ -12,3 +12,4 @@ psutil
 ephem
 xmlschema==1.0.18
 six
+bitsandbytes==0.42.0
