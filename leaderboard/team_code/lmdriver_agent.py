@@ -123,6 +123,24 @@ class DisplayInterface(object):
         pygame.quit()
 
 
+class CameraDisplay(object):
+    """Lightweight display using cv2.imshow (CPU-only, no GPU overhead)."""
+
+    def run_interface(self, input_data):
+        left = input_data['rgb_left']
+        front = input_data['rgb_front']
+        right = input_data['rgb_right']
+        left_resized = cv2.resize(left, (front.shape[1], front.shape[0]))
+        right_resized = cv2.resize(right, (front.shape[1], front.shape[0]))
+        strip = np.hstack([left_resized, front, right_resized])
+        cv2.imshow('LMDrive - Left | Front | Right', cv2.cvtColor(strip, cv2.COLOR_RGB2BGR))
+        cv2.waitKey(1)
+        return front
+
+    def _quit(self):
+        cv2.destroyAllWindows()
+
+
 def get_entry_point():
     return "LMDriveAgent"
 
@@ -172,7 +190,7 @@ def create_carla_rgb_transform(
 class LMDriveAgent(autonomous_agent.AutonomousAgent):
     def setup(self, path_to_conf_file):
 
-        self._hic = DisplayInterface()
+        self._hic = None
         self.track = autonomous_agent.Track.SENSORS
         self.step = -1
         self.wall_start = time.time()
@@ -188,6 +206,12 @@ class LMDriveAgent(autonomous_agent.AutonomousAgent):
         self.visual_feature_buffer = []
 
         self.config = imp.load_source("MainModel", path_to_conf_file).GlobalConfig()
+
+        display_mode = getattr(self.config, 'display_mode', 'pygame')
+        if display_mode == 'camera':
+            self._hic = CameraDisplay()
+        else:
+            self._hic = DisplayInterface()
 
         self.turn_controller = PIDController(K_P=self.config.turn_KP, K_I=self.config.turn_KI, K_D=self.config.turn_KD, n=self.config.turn_n)
         self.speed_controller = PIDController(K_P=self.config.speed_KP, K_I=self.config.speed_KI, K_D=self.config.speed_KD, n=self.config.speed_n)
@@ -560,20 +584,25 @@ class LMDriveAgent(autonomous_agent.AutonomousAgent):
         control.brake = float(brake)
 
         display_data = {}
-        display_data['rgb_front'] = cv2.resize(tick_data['rgb_front'], (1200, 900))
-        display_data['rgb_left'] = cv2.resize(tick_data['rgb_left'], (280, 210))
-        display_data['rgb_right'] = cv2.resize(tick_data['rgb_right'], (280, 210))
-        display_data['rgb_center'] = cv2.resize(tick_data['rgb_front'][330:570, 480:720], (210, 210))
-        if self.active_misleading_instruction:
-            display_data['instruction'] = "Instruction: [Misleading] %s" % input_data['text_input'][0]
+        if isinstance(self._hic, CameraDisplay):
+            display_data['rgb_front'] = cv2.resize(tick_data['rgb_front'], (600, 450))
+            display_data['rgb_left'] = cv2.resize(tick_data['rgb_left'], (200, 150))
+            display_data['rgb_right'] = cv2.resize(tick_data['rgb_right'], (200, 150))
         else:
-            display_data['instruction'] = "Instruction: %s" % input_data['text_input'][0]
-        display_data['time'] = 'Time: %.3f. Frames: %d. End prob: %.2f' % (timestamp, len(self.visual_feature_buffer), end_prob)
-        display_data['meta_control'] = 'Throttle: %.2f. Steer: %.2f. Brake: %.2f' %(
-            control.steer, control.throttle, control.brake
-        )
-        display_data['waypoints'] = 'Waypoints: (%.1f, %.1f), (%.1f, %.1f)' % (waypoints[0,0], -waypoints[0,1], waypoints[1,0], -waypoints[1,1])
-        display_data['notice'] = "Notice: %s" % last_notice
+            display_data['rgb_front'] = cv2.resize(tick_data['rgb_front'], (1200, 900))
+            display_data['rgb_left'] = cv2.resize(tick_data['rgb_left'], (280, 210))
+            display_data['rgb_right'] = cv2.resize(tick_data['rgb_right'], (280, 210))
+            display_data['rgb_center'] = cv2.resize(tick_data['rgb_front'][330:570, 480:720], (210, 210))
+            if self.active_misleading_instruction:
+                display_data['instruction'] = "Instruction: [Misleading] %s" % input_data['text_input'][0]
+            else:
+                display_data['instruction'] = "Instruction: %s" % input_data['text_input'][0]
+            display_data['time'] = 'Time: %.3f. Frames: %d. End prob: %.2f' % (timestamp, len(self.visual_feature_buffer), end_prob)
+            display_data['meta_control'] = 'Throttle: %.2f. Steer: %.2f. Brake: %.2f' %(
+                control.steer, control.throttle, control.brake
+            )
+            display_data['waypoints'] = 'Waypoints: (%.1f, %.1f), (%.1f, %.1f)' % (waypoints[0,0], -waypoints[0,1], waypoints[1,0], -waypoints[1,1])
+            display_data['notice'] = "Notice: %s" % last_notice
         surface = self._hic.run_interface(display_data)
         tick_data['surface'] = surface
 
