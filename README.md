@@ -396,3 +396,35 @@ This implementation is based on code from several repositories.
 
 ## License
 All code within this repository is under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
+
+
+LangAuto (long routes)
+
+**Benchmark Results**
+
+| Benchmark        | RC (Route Completion) | IS (Infraction Score) | DS (Driving Score) | Notes                                      |
+|------------------|----------------------|----------------------|--------------------|---------------------------------------------|
+| **LangAuto**     | ≈ 46%                | ≈ 0.81               | ≈ 36               | Car often fails before finishing long routes; reasonably safe; moderate overall performance |
+| **LangAuto-Short** | ≈ 60%                | ≈ 0.84               | ≈ 50               | Better completion; slightly safer; much better overall |
+| **LangAuto-Tiny**  | ≈ 78%                | ≈ 0.85               | ≈ 66               | Short routes are much easier; safest setting; strong performance on short routes            |
+
+**Legend:**
+- **RC:** Route completion percentage  
+- **IS:** Infraction score (higher is safer)  
+- **DS:** Driving score (overall performance)  
+
+
+### What are LangAuto-Long, LangAuto-Short, and LangAuto-Tiny?
+
+LangAuto-Long, LangAuto-Short, and LangAuto-Tiny are different *route sets* (not scenarios) used for benchmarking in this repo. Each defines a collection of driving routes of varying lengths and difficulty, but shares the same traffic and scenario configurations.
+
+- **LangAuto-Long:** Contains long routes (`langauto/benchmark_long.xml`)
+- **LangAuto-Short:** Contains shorter routes (`langauto/benchmark_short.xml`)
+- **LangAuto-Tiny:** Contains very short routes (`langauto/benchmark_tiny.xml`)
+
+The main difference between these sets is the length of routes:
+- **Longer routes** are more challenging and increase the likelihood of mistakes, leading to lower completion rates and scores.
+- **Shorter routes** are easier, resulting in higher completion rates and scores.
+
+All three are part of the same overall LangAuto benchmark, differing only by route length and resulting difficulty, not by traffic or scenario type.
