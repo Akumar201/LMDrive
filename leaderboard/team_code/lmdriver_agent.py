@@ -583,27 +583,32 @@ class LMDriveAgent(autonomous_agent.AutonomousAgent):
         control.throttle = float(throttle)
         control.brake = float(brake)
 
-        display_data = {}
-        if isinstance(self._hic, CameraDisplay):
-            display_data['rgb_front'] = cv2.resize(tick_data['rgb_front'], (600, 450))
-            display_data['rgb_left'] = cv2.resize(tick_data['rgb_left'], (200, 150))
-            display_data['rgb_right'] = cv2.resize(tick_data['rgb_right'], (200, 150))
-        else:
-            display_data['rgb_front'] = cv2.resize(tick_data['rgb_front'], (1200, 900))
-            display_data['rgb_left'] = cv2.resize(tick_data['rgb_left'], (280, 210))
-            display_data['rgb_right'] = cv2.resize(tick_data['rgb_right'], (280, 210))
-            display_data['rgb_center'] = cv2.resize(tick_data['rgb_front'][330:570, 480:720], (210, 210))
-            if self.active_misleading_instruction:
-                display_data['instruction'] = "Instruction: [Misleading] %s" % input_data['text_input'][0]
+        interval = getattr(self.config, 'display_update_interval', 1)
+        if self.step < 0 or self.step % interval == 0:
+            display_data = {}
+            if isinstance(self._hic, CameraDisplay):
+                display_data['rgb_front'] = cv2.resize(tick_data['rgb_front'], (600, 450))
+                display_data['rgb_left'] = cv2.resize(tick_data['rgb_left'], (200, 150))
+                display_data['rgb_right'] = cv2.resize(tick_data['rgb_right'], (200, 150))
             else:
-                display_data['instruction'] = "Instruction: %s" % input_data['text_input'][0]
-            display_data['time'] = 'Time: %.3f. Frames: %d. End prob: %.2f' % (timestamp, len(self.visual_feature_buffer), end_prob)
-            display_data['meta_control'] = 'Throttle: %.2f. Steer: %.2f. Brake: %.2f' %(
-                control.steer, control.throttle, control.brake
-            )
-            display_data['waypoints'] = 'Waypoints: (%.1f, %.1f), (%.1f, %.1f)' % (waypoints[0,0], -waypoints[0,1], waypoints[1,0], -waypoints[1,1])
-            display_data['notice'] = "Notice: %s" % last_notice
-        surface = self._hic.run_interface(display_data)
+                display_data['rgb_front'] = cv2.resize(tick_data['rgb_front'], (1200, 900))
+                display_data['rgb_left'] = cv2.resize(tick_data['rgb_left'], (280, 210))
+                display_data['rgb_right'] = cv2.resize(tick_data['rgb_right'], (280, 210))
+                display_data['rgb_center'] = cv2.resize(tick_data['rgb_front'][330:570, 480:720], (210, 210))
+                if self.active_misleading_instruction:
+                    display_data['instruction'] = "Instruction: [Misleading] %s" % input_data['text_input'][0]
+                else:
+                    display_data['instruction'] = "Instruction: %s" % input_data['text_input'][0]
+                display_data['time'] = 'Time: %.3f. Frames: %d. End prob: %.2f' % (timestamp, len(self.visual_feature_buffer), end_prob)
+                display_data['meta_control'] = 'Throttle: %.2f. Steer: %.2f. Brake: %.2f' %(
+                    control.steer, control.throttle, control.brake
+                )
+                display_data['waypoints'] = 'Waypoints: (%.1f, %.1f), (%.1f, %.1f)' % (waypoints[0,0], -waypoints[0,1], waypoints[1,0], -waypoints[1,1])
+                display_data['notice'] = "Notice: %s" % last_notice
+            surface = self._hic.run_interface(display_data)
+            self._last_surface = surface
+        else:
+            surface = getattr(self, '_last_surface', np.zeros((450, 600, 3), dtype=np.uint8))
         tick_data['surface'] = surface
 
         if self.step % 2 != 0 and self.step > 4:
