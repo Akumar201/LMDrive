@@ -31,6 +31,7 @@ class GlobalConfig:
     quantization = "8bit"  # None, "4bit", or "8bit"
     display_mode = "pygame"  # "pygame" (full HUD) or "camera" (lightweight cv2)
     display_update_interval = 1  # update display every N steps (1=every step, 2=every 2nd, etc.)
+    model_update_interval = 1  # run model every N steps (1=20Hz, 2=10Hz, 4=5Hz; CARLA is 20Hz)
 
 
     def __init__(self, **kwargs):

@@ -470,7 +470,8 @@ class LMDriveAgent(autonomous_agent.AutonomousAgent):
             control.brake = float(1)
             return control
 
-        if self.step % 2 != 0 and self.step > 4:
+        model_interval = getattr(self.config, 'model_update_interval', 2)
+        if self.step > 4 and self.step % model_interval != 0:
             return self.prev_control
 
         velocity = tick_data["speed"]
