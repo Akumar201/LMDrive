@@ -29,7 +29,7 @@ class GlobalConfig:
     agent_use_notice = False
     sample_rate = 2
     quantization = "8bit"  # None, "4bit", or "8bit"
-    display_mode = "camera"  # "pygame" (full HUD) or "camera" (lightweight cv2)
+    display_mode = "pygame"  # "pygame" (full HUD) or "camera" (lightweight cv2)
     display_update_interval = 1  # update display every N steps (1=every step, 2=every 2nd, etc.)
 
 

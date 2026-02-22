@@ -102,8 +102,10 @@ export ROUTES=leaderboard/data/LangAuto/long.xml
 
 CUDA_VISIBLE_DEVICES=0 ./leaderboard/scripts/run_evaluation.sh
 ```
-
-
+or if you want to choose scenarios and routes use 
+```Shell
+CUDA_VISIBLE_DEVICES=0  ./leaderboard/scripts/run_evaluation_interactive.sh
+```
 To print parameter count and estimated GPU memory 
 
 ```Shell
