@@ -428,3 +428,99 @@ The main difference between these sets is the length of routes:
 - **Shorter routes** are easier, resulting in higher completion rates and scores.
 
 All three are part of the same overall LangAuto benchmark, differing only by route length and resulting difficulty, not by traffic or scenario type.
+
+---
+
+## Running Benchmarks
+
+### Quick Start (LangAuto-Tiny, recommended for testing)
+
+Run a single benchmark and save results to a timestamped file:
+
+```bash
+bash leaderboard/scripts/run_tiny_bench.sh 8bit
+```
+
+The label (`8bit`, `4bit`, `none`) tags the result file so runs with different quantization settings can be compared later. Results are saved to `results/tiny_<label>_<timestamp>.json`. A summary table is printed automatically at the end.
+
+To change the quantization level, edit `leaderboard/team_code/lmdriver_config.py`:
+
+```python
+quantization = "8bit"   # Options: None, "4bit", "8bit"
+```
+
+Then re-run with a matching label:
+
+```bash
+bash leaderboard/scripts/run_tiny_bench.sh 4bit
+```
+
+### Comparing Multiple Runs
+
+After several runs, generate a comparison table across all results with a given label:
+
+```bash
+python3 leaderboard/scripts/summarize_results.py --dir results/ --pattern "tiny_8bit_*.json"
+```
+
+Or compare across all labels at once:
+
+```bash
+python3 leaderboard/scripts/summarize_results.py --dir results/ --pattern "tiny_*.json"
+```
+
+Example output:
+
+```
+------------------------------------------------------------------------
+Run                                   DS    RC (%)        IS    Progress
+------------------------------------------------------------------------
+tiny_8bit_20260225_192804.json    53.231    65.341     0.769       16/16
+tiny_4bit_20260225_200000.json    48.100    61.200     0.756       16/16
+------------------------------------------------------------------------
+AVERAGE (2 runs)                  50.666    63.271     0.763
+------------------------------------------------------------------------
+```
+
+### Detailed Per-Route Breakdown
+
+To see infraction details per route (what caused each failure):
+
+```bash
+python3 leaderboard/scripts/pretty_print_json.py -f results/tiny_8bit_<timestamp>.json
+```
+
+### Other Benchmarks
+
+To run the standard evaluation (LangAuto-Long):
+
+```bash
+bash leaderboard/scripts/run_evaluation.sh
+```
+
+To interactively select route set and scenario type:
+
+```bash
+bash leaderboard/scripts/run_evaluation_interactive.sh
+```
+
+### Display Modes
+
+Control the agent display via `lmdriver_config.py`:
+
+```python
+display_mode = "none"     # Headless — no window (fastest, recommended for benchmarking)
+display_mode = "camera"   # Lightweight cv2 window
+display_mode = "pygame"   # Full HUD with telemetry
+```
+
+### Episode Termination Conditions
+
+Each of the 16 routes in LangAuto-Tiny ends when one of the following occurs:
+
+| Condition | Threshold | Logged as |
+|-----------|-----------|-----------|
+| Route completed | Reached final waypoint | Success |
+| Time limit exceeded | `0.8s × route_length_m + 5s` | `route_timeout` |
+| Agent blocked | Speed < 0.1 m/s for 180s | `vehicle_blocked` |
+| Off-route deviation | > 30m from planned route | `route_dev` |
