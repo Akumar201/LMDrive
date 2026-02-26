@@ -137,6 +137,13 @@ class CameraDisplay(object):
         cv2.waitKey(1)
         return front
 
+
+class NullDisplay(object):
+    """No-op display for fully headless operation (no window opened)."""
+
+    def run_interface(self, input_data):
+        return np.zeros((450, 600, 3), dtype=np.uint8)
+
     def _quit(self):
         cv2.destroyAllWindows()
 
@@ -208,7 +215,9 @@ class LMDriveAgent(autonomous_agent.AutonomousAgent):
         self.config = imp.load_source("MainModel", path_to_conf_file).GlobalConfig()
 
         display_mode = getattr(self.config, 'display_mode', 'pygame')
-        if display_mode == 'camera':
+        if display_mode == 'none':
+            self._hic = NullDisplay()
+        elif display_mode == 'camera':
             self._hic = CameraDisplay()
         else:
             self._hic = DisplayInterface()
@@ -587,7 +596,9 @@ class LMDriveAgent(autonomous_agent.AutonomousAgent):
         interval = getattr(self.config, 'display_update_interval', 1)
         if self.step < 0 or self.step % interval == 0:
             display_data = {}
-            if isinstance(self._hic, CameraDisplay):
+            if isinstance(self._hic, NullDisplay):
+                pass  # skip all image prep — no window to render to
+            elif isinstance(self._hic, CameraDisplay):
                 display_data['rgb_front'] = cv2.resize(tick_data['rgb_front'], (600, 450))
                 display_data['rgb_left'] = cv2.resize(tick_data['rgb_left'], (200, 150))
                 display_data['rgb_right'] = cv2.resize(tick_data['rgb_right'], (200, 150))

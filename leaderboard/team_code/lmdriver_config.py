@@ -29,7 +29,7 @@ class GlobalConfig:
     agent_use_notice = False
     sample_rate = 2
     quantization = "8bit"  # None, "4bit", or "8bit"
-    display_mode = "pygame"  # "pygame" (full HUD) or "camera" (lightweight cv2)
+    display_mode = "pygame"  # "pygame" (full HUD), "camera" (lightweight cv2), or "none" (headless, no window)
     display_update_interval = 1  # update display every N steps (1=every step, 2=every 2nd, etc.)
     model_update_interval = 1  # run model every N steps (1=20Hz, 2=10Hz, 4=5Hz; CARLA is 20Hz)
 
