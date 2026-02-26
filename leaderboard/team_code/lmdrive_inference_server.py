@@ -44,7 +44,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image as ROSImage
 from std_msgs.msg import Float32MultiArray, String
-from cv_bridge import CvBridge
+# cv_bridge replaced with inline numpy conversion (no Boost.Python dependency needed)
 
 # Add LMDrive root to path so we can import team_code and LAVIS
 _REPO_ROOT = os.path.join(os.path.dirname(__file__), '..', '..')
@@ -70,7 +70,7 @@ class LMDriveInferenceServer(Node):
 
     def __init__(self):
         super().__init__('lmdrive_inference_server')
-        self._bridge = CvBridge()
+
         self._lock = threading.Lock()   # protect sensor buffers during inference
 
         # --- Load config and model ---
@@ -151,19 +151,27 @@ class LMDriveInferenceServer(Node):
         self.get_logger().info("Model loaded and ready.")
 
     # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Image conversion (replaces cv_bridge — no Boost.Python needed)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _imgmsg_to_np(msg):
+        """Convert sensor_msgs/Image (rgb8) to uint8 HxWx3 numpy array."""
+        return np.frombuffer(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, 3)
+
     # Sensor callbacks — just store the latest value
     # ------------------------------------------------------------------
     def _cb_front(self, msg):
-        self._rgb_front = self._bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
+        self._rgb_front = self._imgmsg_to_np(msg)
 
     def _cb_left(self, msg):
-        self._rgb_left = self._bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
+        self._rgb_left = self._imgmsg_to_np(msg)
 
     def _cb_right(self, msg):
-        self._rgb_right = self._bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
+        self._rgb_right = self._imgmsg_to_np(msg)
 
     def _cb_rear(self, msg):
-        self._rgb_rear = self._bridge.imgmsg_to_cv2(msg, desired_encoding='rgb8')
+        self._rgb_rear = self._imgmsg_to_np(msg)
 
     def _cb_lidar(self, msg):
         pts = np.array(msg.data, dtype=np.float32)

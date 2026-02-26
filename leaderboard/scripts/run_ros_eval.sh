@@ -19,8 +19,8 @@ RESULT_FILE="${RESULTS_DIR}/${LABEL}_${TIMESTAMP}.json"
 
 mkdir -p "$RESULTS_DIR"
 
-# Source ROS2 so rclpy is available to the agent
-source /opt/ros/humble/setup.bash
+# Source ROS2 Foxy built from source (Python 3.8 / CycloneDDS)
+source ~/ros2_foxy_ws/install/setup.bash
 
 export PT=$(($RANDOM % 1000 + 16000))
 CARLA_PID=""

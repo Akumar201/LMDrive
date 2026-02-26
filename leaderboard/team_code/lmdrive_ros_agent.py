@@ -44,7 +44,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image as ROSImage
 from std_msgs.msg import Float32MultiArray, String
-from cv_bridge import CvBridge
+# cv_bridge replaced with inline numpy conversion (no Boost.Python dependency needed)
 
 from leaderboard.autoagents import autonomous_agent
 from team_code.planner import RoutePlanner, InstructionPlanner
@@ -89,7 +89,6 @@ class LMDriveROSAgent(autonomous_agent.AutonomousAgent):
         if not rclpy.ok():
             rclpy.init()
         self._node = rclpy.create_node('lmdrive_vehicle_agent')
-        self._bridge = CvBridge()
 
         # Publishers (sensor data → inference server)
         qos = 1  # queue depth
@@ -123,6 +122,16 @@ class LMDriveROSAgent(autonomous_agent.AutonomousAgent):
     # ------------------------------------------------------------------
     # Waypoint callback (runs in the ROS2 spin thread)
     # ------------------------------------------------------------------
+    @staticmethod
+    def _np_to_imgmsg(arr):
+        """Convert uint8 HxWx3 numpy array to sensor_msgs/Image (rgb8, no cv_bridge)."""
+        msg = ROSImage()
+        msg.height, msg.width = arr.shape[:2]
+        msg.encoding = 'rgb8'
+        msg.step = arr.strides[0]
+        msg.data = arr.tobytes()
+        return msg
+
     def _on_waypoints(self, msg):
         self._waypoints = np.array(msg.data, dtype=np.float32).reshape(5, 2)
         self._waypoint_event.set()
@@ -234,10 +243,10 @@ class LMDriveROSAgent(autonomous_agent.AutonomousAgent):
         t_publish_start = time.time()
 
         # --- 1. Publish camera images ---
-        self._pub_front.publish(self._bridge.cv2_to_imgmsg(tick_data["rgb_front"], "rgb8"))
-        self._pub_left.publish( self._bridge.cv2_to_imgmsg(tick_data["rgb_left"],  "rgb8"))
-        self._pub_right.publish(self._bridge.cv2_to_imgmsg(tick_data["rgb_right"], "rgb8"))
-        self._pub_rear.publish( self._bridge.cv2_to_imgmsg(tick_data["rgb_rear"],  "rgb8"))
+        self._pub_front.publish(self._np_to_imgmsg(tick_data["rgb_front"]))
+        self._pub_left.publish( self._np_to_imgmsg(tick_data["rgb_left"]))
+        self._pub_right.publish(self._np_to_imgmsg(tick_data["rgb_right"]))
+        self._pub_rear.publish( self._np_to_imgmsg(tick_data["rgb_rear"]))
 
         # --- 2. Publish LiDAR point cloud ---
         lidar_msg = Float32MultiArray()

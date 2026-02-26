@@ -8,8 +8,9 @@
 #   bash leaderboard/scripts/ros2_foxy_install.sh
 #
 # What this installs:
-#   rclpy, std_msgs, sensor_msgs, cv_bridge  (CycloneDDS as RMW)
+#   rclpy, std_msgs, sensor_msgs  (CycloneDDS as RMW)
 #   Built for Python 3.8 inside the lmdrive conda environment
+#   NOTE: cv_bridge is NOT needed — image conversion uses inline numpy instead
 #
 # Tested on: Ubuntu 22.04, conda env lmdrive (Python 3.8)
 # ============================================================================
@@ -42,12 +43,7 @@ if [[ "$EMPY_VER" != "3.3.4" ]]; then
   $CONDA_PYTHON -m pip install 'empy==3.3.4'
 fi
 
-# Boost Python 3.8 — needed for cv_bridge
-BOOST_PY38=$(find /home/akumar/anaconda3/envs/lmdrive -name "libboost_python38*" 2>/dev/null | head -1)
-if [[ -z "$BOOST_PY38" ]]; then
-  echo "Installing boost with Python 3.8 bindings from conda-forge..."
-  conda install -n lmdrive -c conda-forge boost --yes
-fi
+# cv_bridge is NOT used — image conversion is done with numpy directly in the agent files
 
 # --------------------------------------------------------------------------
 # 1. Fetch sources (skip if already done)
@@ -192,7 +188,7 @@ unset ROS_DISTRO
 
 cd "$WS"
 colcon build \
-  --packages-up-to rclpy std_msgs sensor_msgs cv_bridge \
+  --packages-up-to rclpy std_msgs sensor_msgs \
   --packages-skip \
     google_benchmark_vendor \
     performance_test_fixture \
@@ -222,7 +218,7 @@ source "$WS/install/setup.bash"
 "$CONDA_PYTHON" - <<'PYEOF'
 import sys
 ok = True
-for mod in ['rclpy', 'std_msgs.msg', 'sensor_msgs.msg', 'cv_bridge']:
+for mod in ['rclpy', 'std_msgs.msg', 'sensor_msgs.msg']:
     try:
         __import__(mod)
         print(f"  OK  {mod}")
