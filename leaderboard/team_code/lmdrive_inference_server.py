@@ -44,6 +44,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image as ROSImage
 from std_msgs.msg import Float32MultiArray, String
+from torchvision import transforms
 # cv_bridge replaced with inline numpy conversion (no Boost.Python dependency needed)
 
 # Add LMDrive root to path so we can import team_code and LAVIS
@@ -54,10 +55,83 @@ sys.path.insert(0, os.path.join(_REPO_ROOT, 'leaderboard', 'team_code'))
 sys.path.insert(0, os.path.join(_REPO_ROOT, 'scenario_runner'))
 
 from lavis.common.registry import registry
-from team_code.lmdriver_agent import (
-    lidar_to_raw_features,
-    create_carla_rgb_transform,
-)
+
+# ---------------------------------------------------------------------------
+# Inlined from lmdriver_agent.py — avoids importing the full CARLA stack
+# ---------------------------------------------------------------------------
+IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
+IMAGENET_DEFAULT_STD  = (0.229, 0.224, 0.225)
+
+
+def rotate_lidar(lidar, angle):
+    radian = np.deg2rad(angle)
+    return lidar @ [
+        [ np.cos(radian), np.sin(radian), 0, 0],
+        [-np.sin(radian), np.cos(radian), 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1],
+    ]
+
+
+def lidar_to_raw_features(lidar):
+    def preprocess(lidar_xyzr, lidar_painted=None):
+        idx = (
+            (lidar_xyzr[:, 0] > -1.2) & (lidar_xyzr[:, 0] < 1.2) &
+            (lidar_xyzr[:, 1] > -1.2) & (lidar_xyzr[:, 1] < 1.2)
+        )
+        idx = np.argwhere(idx)
+        if lidar_painted is None:
+            return np.delete(lidar_xyzr, idx, axis=0)
+        else:
+            return (np.delete(lidar_xyzr, idx, axis=0),
+                    np.delete(lidar_painted, idx, axis=0))
+
+    lidar_xyzr = preprocess(lidar)
+    idxs = np.arange(len(lidar_xyzr))
+    np.random.shuffle(idxs)
+    lidar_xyzr = lidar_xyzr[idxs]
+
+    lidar_out = np.zeros((40000, 4), dtype=np.float32)
+    num_points = min(40000, len(lidar_xyzr))
+    lidar_out[:num_points, :4] = lidar_xyzr
+    lidar_out[np.isinf(lidar_out)] = 0
+    lidar_out[np.isnan(lidar_out)] = 0
+    lidar_out = rotate_lidar(lidar_out, -90).astype(np.float32)
+    return lidar_out, num_points
+
+
+class Resize2FixedSize:
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, pil_img):
+        return pil_img.resize(self.size)
+
+
+def create_carla_rgb_transform(
+    input_size, need_scale=True,
+    mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD
+):
+    if isinstance(input_size, (tuple, list)):
+        img_size = input_size[-2:]
+        input_size_num = input_size[-1]
+    else:
+        img_size = input_size
+        input_size_num = input_size
+
+    tfl = []
+    if need_scale:
+        scale_map = {112: (170, 128), 128: (195, 146), 224: (341, 256), 256: (288, 288)}
+        if input_size_num not in scale_map:
+            raise ValueError(f"No crop size defined for input_size={input_size_num}")
+        tfl.append(Resize2FixedSize(scale_map[input_size_num]))
+
+    tfl.append(transforms.CenterCrop(img_size))
+    tfl.append(transforms.ToTensor())
+    tfl.append(transforms.Normalize(
+        mean=torch.tensor(mean), std=torch.tensor(std)))
+    return transforms.Compose(tfl)
+# ---------------------------------------------------------------------------
 
 CONFIG_PATH = os.path.join(_REPO_ROOT, 'leaderboard', 'team_code', 'lmdriver_config.py')
 
