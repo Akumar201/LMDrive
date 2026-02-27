@@ -2,6 +2,6 @@ torch==2.0.1
 torchvision
 pyyaml
 scikit-image
-opencv-python
+opencv-python-headless==4.5.5.64
 torch_scatter
 tqdm

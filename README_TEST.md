@@ -13,8 +13,9 @@ conda create -n lmdrive python=3.8
 conda activate lmdrive
 
 # Core dependencies
-pip install torch torchvision
-pip install torch_scatter --no-build-isolation
+pip install torch==2.0.1+cu117 torchvision --index-url https://download.pytorch.org/whl/cu117
+# torch_scatter must match the exact torch+cuda version — use the PyG index
+pip install torch_scatter -f https://data.pyg.org/whl/torch-2.0.1+cu117.html
 
 # Vision encoder
 cd vision_encoder
@@ -27,6 +28,13 @@ cd LAVIS
 pip install -r requirements.txt
 python setup.py develop
 cd ..
+
+# Pin opencv to a compatible version — newer 4.8+ breaks cv2.dnn.DictValue used deep in timm/LAVIS
+pip install "opencv-python-headless==4.5.5.64"
+
+# Required for 8-bit/4-bit quantization — pin to 0.41.3; newer 0.42+ needs triton 2.1+
+# which conflicts with the triton 2.0.0 bundled with torch 2.0.1
+pip install "bitsandbytes==0.41.3"
 
 # CARLA 0.9.10.1
 chmod +x setup_carla.sh

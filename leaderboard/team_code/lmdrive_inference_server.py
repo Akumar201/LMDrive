@@ -35,7 +35,6 @@ import sys
 import threading
 import time
 
-import cv2
 import numpy as np
 import torch
 from PIL import Image as PILImage
@@ -294,7 +293,7 @@ class LMDriveInferenceServer(Node):
                      .unsqueeze(0).cuda().float())
         # Centre crop from front camera (same as original agent)
         rgb_center = (self.rgb_center_transform(
-                          PILImage.fromarray(cv2.resize(self._rgb_front, (800, 600))))
+                          PILImage.fromarray(self._rgb_front).resize((800, 600)))
                       .unsqueeze(0).cuda().float())
 
         # --- Prepare LiDAR ---
