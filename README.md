@@ -524,3 +524,79 @@ Each of the 16 routes in LangAuto-Tiny ends when one of the following occurs:
 | Time limit exceeded | `0.8s × route_length_m + 5s` | `route_timeout` |
 | Agent blocked | Speed < 0.1 m/s for 180s | `vehicle_blocked` |
 | Off-route deviation | > 30m from planned route | `route_dev` |
+
+---
+
+## Running with ROS2 (Cloud-Edge Split Architecture)
+
+This mode splits the inference pipeline across two processes connected via ROS2 topics:
+- **Vehicle agent** (`lmdrive_ros_agent.py`) — runs inside CARLA, publishes sensor data
+- **Inference server** (`lmdrive_inference_server.py`) — owns the full LLM, subscribes to sensors and publishes waypoints back
+
+This lets you measure the ROS2 communication overhead and simulate a cloud-edge deployment.
+
+### Prerequisites — Build ROS2 Foxy from Source
+
+ROS2 Foxy must be built from source against Python 3.8 (the `lmdrive` conda env). Run the provided install script once:
+
+```bash
+conda activate lmdrive
+bash ros2_foxy_install.sh
+```
+
+This takes ~10–20 minutes. It builds `rclpy`, `std_msgs`, `sensor_msgs`, and `rmw_cyclonedds_cpp` into `~/ros2_foxy_ws/install/`.
+
+### Running
+
+You need **two terminals**, both with the `lmdrive` conda env active.
+
+**Terminal 1 — Inference server** (start this first):
+
+```bash
+conda activate lmdrive
+cd ~/LMDrive
+source ~/ros2_foxy_ws/install/setup.bash
+python3 leaderboard/team_code/lmdrive_inference_server.py
+```
+
+Wait until you see:
+```
+[INFO] [lmdrive_inference_server]: LMDrive inference server ready — waiting for sensor data.
+```
+Model loading takes ~30–60 seconds.
+
+**Terminal 2 — CARLA evaluation** (after server is ready):
+
+```bash
+conda activate lmdrive
+cd ~/LMDrive
+bash leaderboard/scripts/run_ros_eval.sh ros2_8bit
+```
+
+Results are saved to `results/ros2_8bit_<timestamp>.json`.
+
+### Viewing the Simulation
+
+By default CARLA runs headless (no window) to save GPU memory. To open the CARLA spectator window, edit `leaderboard/scripts/run_ros_eval.sh` line 42 and remove the `DISPLAY=` prefix:
+
+```bash
+# Headless (default):
+DISPLAY= bash carla/CarlaUE4.sh --world-port=$PT -opengl -quality-level=Low &
+
+# With window:
+bash carla/CarlaUE4.sh --world-port=$PT -opengl -quality-level=Low &
+```
+
+### ROS2 Topics
+
+| Topic | Direction | Type | Description |
+|-------|-----------|------|-------------|
+| `/lmdrive/rgb_front` | agent → server | `sensor_msgs/Image` | Front camera (rgb8) |
+| `/lmdrive/rgb_left` | agent → server | `sensor_msgs/Image` | Left camera |
+| `/lmdrive/rgb_right` | agent → server | `sensor_msgs/Image` | Right camera |
+| `/lmdrive/rgb_rear` | agent → server | `sensor_msgs/Image` | Rear camera |
+| `/lmdrive/lidar` | agent → server | `std_msgs/Float32MultiArray` | N×4 point cloud (x,y,z,intensity) |
+| `/lmdrive/instruction` | agent → server | `std_msgs/String` | Navigation instruction |
+| `/lmdrive/state` | agent → server | `std_msgs/Float32MultiArray` | `[velocity, target_x, target_y, command]` — triggers inference |
+| `/lmdrive/waypoints` | server → agent | `std_msgs/Float32MultiArray` | 10 floats: 5×(x,y) waypoints |
+| `/lmdrive/timing` | server → agent | `std_msgs/Float32MultiArray` | `[inference_ms]` |

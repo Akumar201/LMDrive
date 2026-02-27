@@ -22,6 +22,9 @@ mkdir -p "$RESULTS_DIR"
 # Source ROS2 Foxy built from source (Python 3.8 / CycloneDDS)
 source ~/ros2_foxy_ws/install/setup.bash
 
+# Force CycloneDDS to use loopback so both processes discover each other on the same machine
+export CYCLONEDDS_URI='<CycloneDDS><Domain><General><NetworkInterfaceAddress>lo</NetworkInterfaceAddress></General></Domain></CycloneDDS>'
+
 export PT=$(($RANDOM % 1000 + 16000))
 CARLA_PID=""
 
