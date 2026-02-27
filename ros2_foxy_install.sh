@@ -43,6 +43,12 @@ if [[ "$EMPY_VER" != "3.3.4" ]]; then
   $CONDA_PYTHON -m pip install 'empy==3.3.4'
 fi
 
+# catkin_pkg is required by ament_cmake_core's package_xml_2_cmake.py
+if ! $CONDA_PYTHON -c "import catkin_pkg" 2>/dev/null; then
+  echo "Installing catkin_pkg..."
+  $CONDA_PYTHON -m pip install catkin_pkg
+fi
+
 # cv_bridge is NOT used — image conversion is done with numpy directly in the agent files
 
 # --------------------------------------------------------------------------

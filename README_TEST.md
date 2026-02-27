@@ -94,8 +94,8 @@ The model runs in a separate process from CARLA. Requires two terminals.
 **Build ROS2 once (first time only):**
 ```bash
 conda activate lmdrive
-pip install 'empy==3.3.4'   # ROS2 Foxy requires empy 3.x, not 4.x
-bash ros2_foxy_install.sh   # takes ~15 min, builds into ~/ros2_foxy_ws/
+pip install 'empy==3.3.4' catkin_pkg   # required by ROS2 Foxy build
+bash ros2_foxy_install.sh              # takes ~15 min, builds into ~/ros2_foxy_ws/
 ```
 
 **Terminal 1 — start inference server first:**
