@@ -3,23 +3,72 @@
 ## Installation
 
 ```bash
+git clone https://github.com/opendilab/LMDrive.git
+cd LMDrive
+
+# Create conda environment
+conda deactivate
+conda env remove -n lmdrive          # skip if fresh machine
+conda create -n lmdrive python=3.8
 conda activate lmdrive
-cd ~/LMDrive
 
-# Install dependencies
-cd vision_encoder && pip install -r requirements.txt && python setup.py develop && cd ..
-cd LAVIS && pip install -r requirements.txt && python setup.py develop && cd ..
+# Core dependencies
+pip install torch torchvision
+pip install torch_scatter --no-build-isolation
 
-# Install CARLA
-chmod +x setup_carla.sh && ./setup_carla.sh && pip install carla
+# Vision encoder
+cd vision_encoder
+pip install -r requirements.txt
+python setup.py develop
+cd ..
+
+# LLM (LAVIS)
+cd LAVIS
+pip install -r requirements.txt
+python setup.py develop
+cd ..
+
+# CARLA 0.9.10.1
+chmod +x setup_carla.sh
+./setup_carla.sh
+pip install carla
 ```
 
-Model weights go in `models/`. Edit `leaderboard/team_code/lmdriver_config.py` to point to them:
+---
+
+## Download Model Weights
+
+Download all three model components into the `models/` directory:
+
+```bash
+conda activate lmdrive
+pip install huggingface_hub
+
+python3 - <<'EOF'
+from huggingface_hub import snapshot_download
+# Base LLM
+snapshot_download(repo_id="liuhaotian/llava-v1.5-7b",
+                  local_dir="models/llava-v1.5-7b")
+# Vision encoder
+snapshot_download(repo_id="OpenDILabCommunity/LMDrive-vision-encoder-r50-v1.0",
+                  local_dir="models/LMDrive-vision-encoder-r50-v1.0")
+# LMDrive checkpoint
+snapshot_download(repo_id="OpenDILabCommunity/LMDrive-llava-v1.5-7b-v1.0",
+                  local_dir="models/LMDrive-llava-v1.5-7b-v1.0")
+EOF
+```
+
+The config at `leaderboard/team_code/lmdriver_config.py` already points to these paths by default:
+```
+models/llava-v1.5-7b
+models/LMDrive-vision-encoder-r50-v1.0/vision-encoder-r50.pth.tar
+models/LMDrive-llava-v1.5-7b-v1.0/llava-v1.5-checkpoint.pth
+```
+
+**No editing needed** unless you want to change quantization or display:
 ```python
-preception_model_ckpt = "models/LMDrive-vision-encoder-r50-v1.0/..."
-llm_model             = "models/llava-v1.5-7b"
-lmdrive_ckpt          = "models/LMDrive-llava-v1.5-7b-v1.0/..."
-quantization          = "8bit"   # None, "4bit", or "8bit"
+quantization  = "8bit"   # None, "4bit", or "8bit"
+display_mode  = "none"   # "none" for headless (benchmarking), "pygame" for full HUD
 ```
 
 ---
@@ -45,7 +94,8 @@ The model runs in a separate process from CARLA. Requires two terminals.
 **Build ROS2 once (first time only):**
 ```bash
 conda activate lmdrive
-bash ros2_foxy_install.sh   # takes ~15 min
+pip install 'empy==3.3.4'   # ROS2 Foxy requires empy 3.x, not 4.x
+bash ros2_foxy_install.sh   # takes ~15 min, builds into ~/ros2_foxy_ws/
 ```
 
 **Terminal 1 — start inference server first:**
@@ -57,7 +107,11 @@ export CYCLONEDDS_URI='<CycloneDDS><Domain><General><NetworkInterfaceAddress>lo<
 python3 leaderboard/team_code/lmdrive_inference_server.py
 ```
 
-Wait for: `[INFO] [lmdrive_inference_server]: LMDrive inference server ready — waiting for sensor data.`
+Wait for:
+```
+[INFO] [lmdrive_inference_server]: LMDrive inference server ready — waiting for sensor data.
+```
+Model loading takes ~30–60 seconds. **Do not start Terminal 2 until you see this.**
 
 **Terminal 2 — start CARLA evaluation after server is ready:**
 ```bash
