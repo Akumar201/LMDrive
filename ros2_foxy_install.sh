@@ -97,59 +97,45 @@ PYEOF
 patch_xml \
   "$WS/src/ament/ament_cmake/ament_cmake_google_benchmark/package.xml" \
   '<exec_depend>google_benchmark_vendor</exec_depend>' \
-  '<!-- disabled: no google_benchmark_vendor build
-  <exec_depend>google_benchmark_vendor</exec_depend>
-  -->'
+  '<!-- exec_depend google_benchmark_vendor disabled -->'
 
 # -- Fix 2: rosidl_typesupport_fastrtps_c/cpp -- remove group membership so
 #    rosidl_typesupport_c doesn't pull them in as group dependencies.
 patch_xml \
   "$WS/src/ros2/rosidl_typesupport_fastrtps/rosidl_typesupport_fastrtps_c/package.xml" \
   '<member_of_group>rosidl_typesupport_c_packages</member_of_group>' \
-  '<!-- disabled: skipping FastRTPS (no fastrtps cmake config in Fast-DDS 3.x)
-  <member_of_group>rosidl_typesupport_c_packages</member_of_group>
-  -->'
+  '<!-- member_of_group rosidl_typesupport_c_packages disabled -->'
 
 patch_xml \
   "$WS/src/ros2/rosidl_typesupport_fastrtps/rosidl_typesupport_fastrtps_cpp/package.xml" \
   '<member_of_group>rosidl_typesupport_cpp_packages</member_of_group>' \
-  '<!-- disabled: skipping FastRTPS
-  <member_of_group>rosidl_typesupport_cpp_packages</member_of_group>
-  -->'
+  '<!-- member_of_group rosidl_typesupport_cpp_packages disabled -->'
 
 # -- Fix 3: rmw_fastrtps_cpp/dynamic_cpp -- remove group membership so
 #    rmw_implementation does not require them via rmw_implementation_packages group.
 patch_xml \
   "$WS/src/ros2/rmw_fastrtps/rmw_fastrtps_cpp/package.xml" \
   '<member_of_group>rmw_implementation_packages</member_of_group>' \
-  '<!-- disabled: skipping FastRTPS
-  <member_of_group>rmw_implementation_packages</member_of_group>
-  -->'
+  '<!-- member_of_group rmw_implementation_packages disabled (rmw_fastrtps_cpp) -->'
 
 patch_xml \
   "$WS/src/ros2/rmw_fastrtps/rmw_fastrtps_dynamic_cpp/package.xml" \
   '<member_of_group>rmw_implementation_packages</member_of_group>' \
-  '<!-- disabled: skipping FastRTPS
-  <member_of_group>rmw_implementation_packages</member_of_group>
-  -->'
+  '<!-- member_of_group rmw_implementation_packages disabled (rmw_fastrtps_dynamic_cpp) -->'
 
 # -- Fix 4: rmw_implementation -- remove build_depend on rmw_fastrtps_cpp
 #    (only CycloneDDS will be used as the RMW).
 patch_xml \
   "$WS/src/ros2/rmw_implementation/rmw_implementation/package.xml" \
   '<build_depend>rmw_fastrtps_cpp</build_depend>' \
-  '<!-- disabled: using CycloneDDS only
-  <build_depend>rmw_fastrtps_cpp</build_depend>
-  -->'
+  '<!-- build_depend rmw_fastrtps_cpp disabled -->'
 
 # -- Fix 5: rosidl_generator_py -- test_depend on fastrtps_c is checked by colcon
 #    even with BUILD_TESTING=OFF.
 patch_xml \
   "$WS/src/ros2/rosidl_python/rosidl_generator_py/package.xml" \
   '<test_depend>rosidl_typesupport_fastrtps_c</test_depend>' \
-  '<!-- disabled: skipping FastRTPS
-  <test_depend>rosidl_typesupport_fastrtps_c</test_depend>
-  -->'
+  '<!-- test_depend rosidl_typesupport_fastrtps_c disabled -->'
 
 # --------------------------------------------------------------------------
 # 3. Pre-create stub install dirs for all skipped packages
